@@ -7,6 +7,7 @@ import type { Bridge } from "./bridge";
 import { I18nProvider, type UiClock } from "./i18n";
 import { later } from "./later";
 import { PdfViewerProvider } from "./pdf";
+import { LecturerShell } from "./shell/lecturer";
 import { Shell } from "./shell/shell";
 import { type AppStore, StoreProvider, useDataset, useSettings, useStatus } from "./store";
 import { Toaster, TooltipProvider } from "./ui/overlays";
@@ -69,14 +70,16 @@ function Root() {
   // On first run the welcome screen stays until the Student moves on, so SIX can be connected right after Edunex.
   const [welcoming, setWelcoming] = useState(nobody);
   if (nobody && !welcoming) setWelcoming(true);
+  const lecturer = account?.role === "lecturer";
+  const signedIn = lecturer ? <LecturerShell /> : <Shell />;
   return welcoming ? (
     // Its code is in on first run; after a sign-out, the idle preload has long brought it.
     <Suspense fallback={null}>
       {/* Its reading step shows the app itself, scaled down, coming into focus; "Buka Edunex Plus" grows it to the
           window, and the app is then just there (the first run, docs/design-system.md). */}
-      <Welcome app={<Shell arriving />} onDone={() => setWelcoming(false)} />
+      <Welcome app={lecturer ? <LecturerShell /> : <Shell arriving />} onDone={() => setWelcoming(false)} />
     </Suspense>
   ) : (
-    <Shell />
+    signedIn
   );
 }

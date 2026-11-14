@@ -37,8 +37,21 @@ export const DoneEntry = z.object({
 });
 export type DoneEntry = z.infer<typeof DoneEntry>;
 
-/** Whose snoozes and handled list these are: a different Student signing in to Edunex starts with none, even after the last one signed out of Edunex alone. */
-export const LocalOwner = z.object({ nim: z.string().max(40) });
+/**
+ * Whose snoozes and handled list these are: a different account signing in to Edunex starts with none, even after the
+ * last one signed out of Edunex alone. `key` is `accountKey` (`s:{nim}` or `l:{userId}`). Older saves used `{ nim }`
+ * only; those still load as that student's key.
+ */
+export const LocalOwner = z.preprocess(
+  (value) => {
+    if (!value || typeof value !== "object") return value;
+    const row = value as { key?: unknown; nim?: unknown };
+    if (typeof row.key === "string") return { key: row.key };
+    if (typeof row.nim === "string") return { key: `s:${row.nim}` };
+    return value;
+  },
+  z.object({ key: z.string().max(80) }),
+);
 
 export const snoozeDatasets = {
   "local.snoozes": z.array(SnoozeEntry).max(500),

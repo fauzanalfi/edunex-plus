@@ -130,8 +130,9 @@ describe("another Student signing in", () => {
     const cache = createFileCache(path.join(root, FILE_CACHE_FOLDER));
     await cache.put(URL_A, pdf());
     const files = await downloaded(URL_A);
-    const follow = forgetOtherStudentsFiles([cache, files], "10000001");
-    const account = (nim: string) => ({ type: "dataset", dataset: { name: "edunex.account", value: { nim }, fetchedAt: 0, hash: "" } }) as never;
+    const follow = forgetOtherStudentsFiles([cache, files], "s:10000001");
+    const account = (nim: string) =>
+      ({ type: "dataset", dataset: { name: "edunex.account", value: { name: "Siswa", nim, role: "student" }, fetchedAt: 0, hash: "" } }) as never;
     // The same Student's account read again keeps them.
     await follow(account("10000001"));
     expect(await cache.get(URL_A)).toEqual(pdf());

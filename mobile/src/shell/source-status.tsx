@@ -416,11 +416,14 @@ export function SyncPanel({ open, onClose }: { open: boolean; onClose(): void })
 
 function hintFor({ state, asks }: SourceStatus, source: string, t: ReturnType<typeof useT>): string | null {
   if (state === "action-needed" && asks === "student") return t("status.notStudentHint");
+  if (state === "action-needed" && asks === "lecturer") return t("status.lecturerSixHint");
   if (state === "expired") return t("status.expiredHint", { source });
   if (state === "changed") return t("status.changedHint", { source });
   if (state === "offline") return t("status.offlineHint", { source });
   return null;
 }
+
+const asksSignOut = (asks: SourceStatus["asks"]) => asks === "student" || asks === "lecturer";
 
 function SourceRow({ source, onClose }: { source: SourceId; onClose(): void }) {
   const t = useT();
@@ -433,7 +436,7 @@ function SourceRow({ source, onClose }: { source: SourceId; onClose(): void }) {
   const refreshing = useReading().includes(source);
   const name = t(`source.${source}`);
   const needsSignIn = source !== "itb" && (status.state === "expired" || status.state === "signed-out");
-  const notStudent = status.state === "action-needed" && status.asks === "student";
+  const notStudent = status.state === "action-needed" && asksSignOut(status.asks);
   const note = useSignInNote(source);
   const hint = needsSignIn && note ? note.text : refreshing ? t("sync.checking") : hintFor(status, name, t);
   const word = status.state === "changed" ? t("status.changedShort") : t(`status.${status.state}`);
@@ -521,7 +524,7 @@ export function ProblemBanner({ belowBar = false }: { belowBar?: boolean }) {
   const problem =
     [edunex, six].find((status) => status.state === "changed") ??
     [edunex, six].find((status) => status.state === "expired" || (status.state === "signed-out" && has[status.source as "edunex" | "six"])) ??
-    [edunex, six].find((status) => status.state === "action-needed" && status.asks === "student") ??
+    [edunex, six].find((status) => status.state === "action-needed" && asksSignOut(status.asks)) ??
     ([edunex, six].filter((status) => status.state !== "signed-out").every((status) => status.state === "offline") &&
     [edunex, six].some((status) => status.state === "offline")
       ? [edunex, six].find((status) => status.state === "offline")
@@ -541,7 +544,9 @@ export function ProblemBanner({ belowBar = false }: { belowBar?: boolean }) {
       : problem.state === "signed-out"
         ? t("banner.signedOut", { source: name })
         : notStudent
-          ? t("banner.notStudent", { source: name })
+          ? problem.asks === "lecturer"
+            ? t("banner.lecturerSix")
+            : t("banner.notStudent", { source: name })
           : t("banner.changed", { source: name });
   const note = needsSignIn ? (problem.source === "six" ? sixNote : edunexNote) : null;
   const detail = note
@@ -553,7 +558,9 @@ export function ProblemBanner({ belowBar = false }: { belowBar?: boolean }) {
       : problem.state === "changed"
         ? t("status.changedHint", { source: name })
         : notStudent
-          ? t("status.notStudentHint")
+          ? problem.asks === "lecturer"
+            ? t("status.lecturerSixHint")
+            : t("status.notStudentHint")
           : t("banner.keptHint");
   const [bg, fg] =
     problem.state === "changed"

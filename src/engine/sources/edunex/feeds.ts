@@ -2,8 +2,9 @@
 // this term's courses.
 
 import type { z } from "zod";
-import type { Account, Course } from "../../../core/models";
-import { ActionNeeded, AnswerError } from "../../errors";
+import { accountKey } from "../../../core/account";
+import type { Account, AccountRole, Course } from "../../../core/models";
+import { EngineError } from "../../errors";
 import type { FeedRead } from "../../report/kept-pages";
 import type { SourceContext } from "../source";
 import type { EdunexClient } from "./client";
@@ -16,29 +17,26 @@ export interface EdunexUser {
   id: number | null;
 }
 
-/**
- * GET /login/me: who is signed in. An account that isn't a student's (a lecturer's says `level: "LECTURER"` and has no
- * `code`, the NIM) is asked to sign in with a Student's: the app reads only theirs, and that isn't a change to report.
- */
+/** GET /login/me: who is signed in. A lecturer (`level: "LECTURER"`, no `code`) is a lecturer account; everyone else needs a NIM. */
 export async function fetchMe(client: EdunexClient): Promise<z.infer<typeof LoginMe>> {
-  try {
-    return await client.get("/login/me", {}, LoginMe);
-  } catch (error) {
-    throw notAStudent(error);
-  }
+  return client.get("/login/me", {}, LoginMe);
 }
 
-function notAStudent(error: unknown): unknown {
-  if (!(error instanceof AnswerError) || !error.message.startsWith("/login/me: code ")) return error;
-  let me: { level?: unknown; code?: unknown } | null;
-  try {
-    me = JSON.parse(error.answer.body);
-  } catch {
-    return error;
-  }
-  const level = me?.level;
-  if (level !== "LECTURER" || me?.code !== undefined) return error;
-  return new ActionNeeded("student", "Edunex signed in a lecturer account, not a student's");
+/** Student when `code` is present; lecturer when Edunex says LECTURER without a NIM; otherwise a vendor change (same wording as before). */
+export function roleOf(me: z.infer<typeof LoginMe>): AccountRole {
+  const level = me.level?.toUpperCase();
+  if (level === "LECTURER" && me.code === undefined) return "lecturer";
+  if (me.code !== undefined) return "student";
+  throw new EngineError("VendorChanged", "/login/me: code Invalid input: expected string, received undefined");
+}
+
+/**
+ * Student-only feeds wait for the account feed, then skip when the signed-in account is a lecturer (their feeds come
+ * in a later phase). Returns false when this run should do nothing.
+ */
+export async function forStudent(context: SourceContext): Promise<boolean> {
+  if (!context.get("edunex.account")) await context.runNow((feed) => feed === "edunex.account");
+  return context.get("edunex.account")?.role !== "lecturer";
 }
 
 export function registerCoreFeeds(context: SourceContext, client: EdunexClient, user: EdunexUser = { id: null }): void {
@@ -53,33 +51,42 @@ export function registerCoreFeeds(context: SourceContext, client: EdunexClient, 
     async run(current, read) {
       const { context, client } = noted(read);
       const me = await fetchMe(client);
-      const account: Account = { name: me.name.trim(), nim: me.code };
+      const role = roleOf(me);
+      const account: Account = {
+        name: me.name.trim(),
+        nim: role === "student" ? (me.code ?? null) : null,
+        role,
+        userId: me.id,
+      };
       if (!current()) return;
       user.id = me.id;
       const previous = context.get("edunex.account");
-      // A different Student signed in on this computer: nothing of the last one may show.
-      if (previous && previous.nim !== account.nim) await context.remove("edunex.");
+      const nextKey = accountKey(account);
+      const previousKey = previous ? accountKey(previous) : null;
+      // A different account signed in on this computer: nothing of the last one may show.
+      if (previousKey && previousKey !== nextKey) await context.remove("edunex.");
       // Nor their snoozes and what they marked handled, kept past signing out of Edunex alone: Task ids are the
       // whole class's, so a classmate's "not handing it in" would hide this Student's Task and stop its reminders.
       // Nor their highlights: the course's files are the whole class's too, and what one Student marked is theirs.
       const owner = context.get("local.owner");
-      if ((previous && previous.nim !== account.nim) || (owner && owner.nim !== account.nim)) {
+      if ((previousKey && previousKey !== nextKey) || (owner && owner.key !== nextKey)) {
         await context.remove("local.snoozes");
         await context.remove("local.done");
         await context.remove("local.highlights");
       }
-      if (owner?.nim !== account.nim) await context.set("local.owner", { nim: account.nim });
+      if (owner?.key !== nextKey) await context.set("local.owner", { key: nextKey });
       await context.set("edunex.account", account);
     },
   });
   context.feed({
     name: "edunex.courses",
-    // What the Tasks and Presence are read for (one call).
+    // What the Tasks and Presence are read for (one call). Lecturers get their own feeds in a later phase.
     priority: "now",
     every: 30 * MINUTE,
     jitter: 3 * MINUTE,
     async run(_current, read) {
       const { context, client } = noted(read);
+      if (!(await forStudent(context))) return;
       await context.set("edunex.courses", await fetchCourses(client));
     },
   });

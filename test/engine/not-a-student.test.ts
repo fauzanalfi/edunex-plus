@@ -1,6 +1,6 @@
-// #345–#352: a lecturer signed in. Edunex's /login/me has no NIM (`code`) and says level "LECTURER", and SIX's home
-// links only /app/dosen:… pages. The app reads only a Student's Edunex and SIX: each system asks them to sign in with a
-// student account, and none of it is a change to report.
+// Lecturer and other non-student accounts on Edunex and SIX.
+// Edunex: a lecturer (`level: "LECTURER"`, no NIM) signs in and gets a lecturer account (Phase A role gate).
+// SIX: a lecturer's home still isn't student pages — action-needed asks "lecturer", nothing reported.
 import { describe, expect, it } from "vitest";
 import { bodyText } from "../kit/fixtures";
 import { PRETEND_TOKEN } from "../pretend/edunex";
@@ -29,7 +29,7 @@ async function sendingReports() {
   return h;
 }
 
-/** Edunex's /login/me for a lecturer, as #345 kept it: no `code`, level "LECTURER", a lecturer's own fields. */
+/** Edunex's /login/me for a lecturer: no `code`, level "LECTURER", a lecturer's own fields. */
 function asLecturer(h: Harness): void {
   const { code: _nim, ...me } = h.world.edunex.me as Record<string, unknown>;
   h.world.edunex.me = { ...me, level: "LECTURER", nidn: "0000000000", lecturer_id: 1 };
@@ -43,15 +43,22 @@ const nothingReported = async (h: Harness) => {
 };
 
 describe("an account that isn't a student's", () => {
-  it("Edunex: a lecturer is asked to sign in with a student account, and nothing is reported", async () => {
+  it("Edunex: a lecturer signs in as a lecturer, without student feeds or a report", async () => {
     const h = await sendingReports();
     asLecturer(h);
     await until(h, h.engine.signIn("edunex", { token: PRETEND_TOKEN }));
     await until(h, h.engine.refresh("edunex"));
 
-    expect(h.status("edunex")).toMatchObject({ state: "action-needed", asks: "student" });
-    expect(h.dataset("edunex.account")).toBeUndefined();
-    expect(h.dataset("edunex.notifications")).toBeUndefined();
+    expect(h.status("edunex")).toMatchObject({ state: "live" });
+    expect(h.dataset("edunex.account")).toMatchObject({
+      name: expect.any(String),
+      nim: null,
+      role: "lecturer",
+      userId: expect.any(Number),
+    });
+    expect(h.dataset("edunex.courses")).toBeUndefined();
+    expect(h.dataset("edunex.tasks")).toBeUndefined();
+    expect(h.dataset("local.owner")).toEqual({ key: `l:${h.dataset("edunex.account")!.userId}` });
     await nothingReported(h);
   });
 
@@ -63,12 +70,12 @@ describe("an account that isn't a student's", () => {
     expect(h.status("edunex")).toMatchObject({ state: "changed", detail: "/login/me: code Invalid input: expected string, received undefined" });
   });
 
-  it("SIX: a lecturer's home page (#346) asks for a student account, and nothing is reported", async () => {
+  it("SIX: a lecturer's home page asks as a lecturer, and nothing is reported", async () => {
     const h = await sendingReports();
     h.world.six.editPage(/^\/home$/, () => bodyText("six", "report-lecturer-home-home.html"));
     await until(h, h.engine.signIn("six", { cookie: PRETEND_SIX_COOKIE }));
 
-    expect(h.status("six")).toMatchObject({ state: "action-needed", asks: "student" });
+    expect(h.status("six")).toMatchObject({ state: "action-needed", asks: "lecturer" });
     expect(h.dataset("six.student")).toBeUndefined();
     await nothingReported(h);
   });

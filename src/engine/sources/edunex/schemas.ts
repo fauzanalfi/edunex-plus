@@ -3,11 +3,15 @@
 // mistyped field the app relies on fails the check.
 import { z } from "zod";
 
-/** GET /login/me — also the liveness check. Edunex keeps the student number in `code`. */
+/**
+ * GET /login/me — also the liveness check. Students have `code` (NIM). Lecturers say `level: "LECTURER"` and have no
+ * `code`. Role is decided in the account feed, not here.
+ */
 export const LoginMe = z.object({
   id: z.number(),
   name: z.string(),
-  code: z.string(),
+  code: z.string().optional(),
+  level: z.string().optional(),
 });
 
 /** GET /course/presences/list — the Student's course and class pairs for the current period. */

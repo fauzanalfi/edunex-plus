@@ -10,7 +10,7 @@ import { isEngineError } from "../../errors";
 import type { FeedRead } from "../../report/kept-pages";
 import type { SourceContext } from "../source";
 import type { EdunexClient } from "./client";
-import { fetchCourses } from "./feeds";
+import { fetchCourses, forStudent } from "./feeds";
 import { type EdunexTask, fetchCourseTasks, fetchOpenTasks, storeTasks, toTask, writeLog } from "./task-records";
 
 export { taskActions } from "./hand-in";
@@ -31,6 +31,7 @@ export function registerTaskFeeds(context: SourceContext, client: EdunexClient):
     jitter: 2 * MINUTE,
     async run(current, read) {
       const { context, client } = noted(read);
+      if (!(await forStudent(context))) return;
       const log = writeLog(context);
       const begun = log.count;
       const courses = await termCourses(context, client, current);

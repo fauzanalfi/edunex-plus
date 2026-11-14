@@ -18,7 +18,7 @@ describe("Edunex sign-in → your courses", () => {
     await h.engine.signIn("edunex", { token: PRETEND_TOKEN });
     expect(h.status("edunex")).toMatchObject({ state: "live", detail: null });
     expect(h.status("edunex").updatedAt).toBe(h.world.clock.now());
-    expect(h.dataset("edunex.account")).toEqual({ name: "Dimas Pratama", nim: "18223901" });
+    expect(h.dataset("edunex.account")).toMatchObject({ name: "Dimas Pratama", nim: "18223901", role: "student" });
     const courses = h.dataset("edunex.courses")!;
     expect(courses.map((c) => c.code)).toEqual(["DK4073", "II4091", "KU5014", "PL3002", "PL3032"]);
     const ii4091 = courses.find((c) => c.code === "II4091")!;

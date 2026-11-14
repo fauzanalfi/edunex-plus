@@ -18,11 +18,12 @@ export const SourceState = z.enum(["signed-out", "connecting", "live", "offline"
 export type SourceState = z.infer<typeof SourceState>;
 
 /**
- * What a service in "action-needed" wants the Student to do on its own site first: fill in SIX's
- * Pengkinian Data Induk ("datainduk"), or something on another page of SIX's the app never reads.
+ * What a service in "action-needed" wants done on its own site first: fill in SIX's Pengkinian Data Induk
+ * ("datainduk"); sign out of a student-only source while signed in as a lecturer ("lecturer"); or something on
+ * another page the app never reads ("other").
+ * "student" remains for older saved status / unknown non-student accounts that aren't a recognised lecturer.
  */
-/** "student": the account signed in isn't a student's (a lecturer's), and the app reads only a Student's. */
-export const SourceAsks = z.enum(["datainduk", "student", "other"]);
+export const SourceAsks = z.enum(["datainduk", "student", "lecturer", "other"]);
 export type SourceAsks = z.infer<typeof SourceAsks>;
 
 /**

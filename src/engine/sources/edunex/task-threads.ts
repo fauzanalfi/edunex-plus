@@ -14,6 +14,7 @@ import { takesAnswers } from "../../../core/tasks";
 import { isEngineError } from "../../errors";
 import type { SourceContext } from "../source";
 import type { EdunexClient } from "./client";
+import { forStudent } from "./feeds";
 import { edunexTime, Id } from "./task-records";
 
 const MINUTE = 60_000;
@@ -138,6 +139,7 @@ export function registerThreadFeed(context: SourceContext, client: EdunexClient)
     // Also started by the Tasks feed each time it has read the answers (./tasks.ts), so never on a refresh's own.
     background: true,
     async run(current) {
+      if (!(await forStudent(context))) return;
       const tasks = context.get("edunex.tasks");
       if (!tasks) return;
       const before = new Map((context.get("edunex.taskThreads") ?? []).map((thread) => [thread.answerId, thread]));

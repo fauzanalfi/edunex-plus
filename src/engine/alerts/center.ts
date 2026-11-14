@@ -9,6 +9,7 @@
 //   in the history ("app.alerts", newest first);
 // - planned alerts still to come are handed on at every replan, so the phone
 //   can book them ahead (./phone.ts).
+import { accountKey } from "../../core/account";
 import type { Event } from "../../core/contract";
 import {
   ALERT_GROUP,
@@ -101,7 +102,8 @@ export class AlertCenter {
       const value = this.deps.get(name);
       if (value !== undefined) this.last.set(name, value);
     }
-    this.lastNim = this.deps.get("edunex.account")?.nim ?? null;
+    const account = this.deps.get("edunex.account");
+    this.lastNim = account ? accountKey(account) : null;
   }
 
   start(): void {
@@ -142,10 +144,10 @@ export class AlertCenter {
     const name = event.dataset.name as DatasetName;
     const next = event.dataset.value;
     if (name === "edunex.account") {
-      // Another Student signed in on this computer: the last one's alerts go.
-      const nim = (next as DatasetValue<"edunex.account">).nim;
-      if (this.lastNim && nim !== this.lastNim) void this.reset();
-      this.lastNim = nim;
+      // Another account signed in on this computer: the last one's alerts go.
+      const key = accountKey(next as DatasetValue<"edunex.account">);
+      if (this.lastNim && key !== this.lastNim) void this.reset();
+      this.lastNim = key;
     }
     if (!this.watched.has(name)) return;
     this.touched(name);

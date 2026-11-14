@@ -411,7 +411,8 @@ export function FirstMinute({ onDone }: { onDone(): void }) {
     (source === "edunex" ? edunexIn : sixIn) ? "in" : stepOf(source) !== null || busy === source ? "working" : "rest";
   // What each system just said, for its door, one thing each in two lines' room: Edunex the NIM (the name is in the
   // greeting: said once); SIX the programme. Nothing until it has said it: the tick alone says it's connected.
-  const learned = (source: Source): [string?, string?] => (source === "edunex" ? [undefined, account?.nim] : [student?.program ?? undefined]);
+  const learned = (source: Source): [string?, string?] =>
+    source === "edunex" ? [undefined, account?.role === "lecturer" ? t("lecturer.role") : (account?.nim ?? undefined)] : [student?.program ?? undefined];
 
   // What the button became: where the sign-in is, in words. Nothing once both are in: the doors say that.
   const sourceName = (source: Source) => t(`source.${source}`);
