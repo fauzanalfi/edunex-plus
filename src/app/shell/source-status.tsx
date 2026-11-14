@@ -52,10 +52,16 @@ function useOpenAsked(): (source: SourceId) => void {
   return useCallback((source: SourceId) => open(source === "edunex" ? EDUNEX_WEB : nim ? sixStatusUrl(nim) : SIX_WEB), [open, nim]);
 }
 
-/** What a system in "action-needed" asks of the Student, as the banner and the status panel say it (`hint`), with `source` its name. */
+/** What a system in "action-needed" asks, as the banner and the status panel say it (`hint`), with `source` its name. */
 function askedHint(asks: SourceAsks | undefined, source: string, t: ReturnType<typeof useT>): string {
   if (asks === "student") return t("status.notStudentHint");
+  if (asks === "lecturer") return t("status.lecturerSixHint");
   return asks === "datainduk" ? t("status.dataIndukHint") : t("status.actionNeededHint", { source });
+}
+
+/** Sign out of everything (wrong account type), or open the system's site. */
+function asksSignOut(asks: SourceAsks | undefined): boolean {
+  return asks === "student" || asks === "lecturer";
 }
 
 /**
@@ -314,7 +320,7 @@ function SourceRow({ source }: { source: SourceId }) {
         <Button size="sm" variant={status.state === "expired" ? "primary" : "secondary"} busy={signingIn} onClick={() => void signIn(source)}>
           {status.state === "expired" ? t("action.signInAgain") : t("action.signInTo", { source: name })}
         </Button>
-      ) : status.state === "action-needed" && status.asks === "student" ? (
+      ) : status.state === "action-needed" && asksSignOut(status.asks) ? (
         <Button size="sm" variant="primary" busy={signingOut} onClick={() => void signOut()}>
           {t("action.signOut")}
         </Button>
@@ -387,7 +393,9 @@ export function ProblemBanner() {
             ? t("banner.dataInduk")
             : problem.asks === "student"
               ? t("banner.notStudent", { source: name })
-              : t("banner.actionNeeded", { source: name })
+              : problem.asks === "lecturer"
+                ? t("banner.lecturerSix")
+                : t("banner.actionNeeded", { source: name })
           : t("banner.changed", { source: name });
   const note = needsSignIn ? (problem.source === "six" ? sixNote : edunexNote) : null;
   const detail = note
@@ -431,7 +439,7 @@ export function ProblemBanner() {
         <Button size="sm" variant="primary" busy={signingIn} onClick={() => void signIn(problem.source)}>
           {problem.state === "expired" ? t("action.signInAgain") : t("action.signInTo", { source: name })}
         </Button>
-      ) : asked && problem.asks === "student" ? (
+      ) : asked && asksSignOut(problem.asks) ? (
         <Button size="sm" variant="primary" busy={signingOut} onClick={() => void signOut()}>
           {t("action.signOut")}
         </Button>

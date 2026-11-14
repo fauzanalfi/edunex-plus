@@ -8,8 +8,10 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRe
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { type ReactNode, useEffect, useMemo } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useDataset } from "../../src/app/store";
 import { useWidgetUpdates } from "../src/host/widget";
 import { CourseColorPickerHost } from "../src/parts/course-color-picker";
 import { perfNavigating, perfShown, watchJsThread } from "../src/perf";
@@ -17,6 +19,7 @@ import { ReportAskCard } from "../src/screens/report/ask";
 import { Boot } from "../src/shell/boot";
 import { useFirstFrameShown } from "../src/shell/first-frame";
 import { GuideHost } from "../src/shell/guide/host";
+import { LecturerShell } from "../src/shell/lecturer";
 import { useNobodyIn } from "../src/shell/nobody";
 import { NotificationTaps } from "../src/shell/notification-taps";
 import { SignInHost } from "../src/shell/sign-in";
@@ -94,6 +97,7 @@ function Frame() {
       </DeferredScreens>
       {/* Until a system is in: then it fades, and Beranda fills in under it (the first read's summary is a card there). */}
       <WelcomeWhileNobody />
+      <LecturerWhileSignedIn />
       <AfterFirstFrame>
         <ReportAskCard />
         <Toasts />
@@ -118,4 +122,15 @@ function AfterFirstFrame({ children }: { children: ReactNode }) {
 /** The welcome while nobody is signed in: apart, so a source's state changing doesn't draw the whole frame again. */
 function WelcomeWhileNobody() {
   return useNobodyIn() ? <Welcome /> : null;
+}
+
+/** Lecturer shell over the student tabs once Edunex is a lecturer account (Phase A). */
+function LecturerWhileSignedIn() {
+  const account = useDataset("edunex.account");
+  if (account?.role !== "lecturer") return null;
+  return (
+    <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, zIndex: 20 }}>
+      <LecturerShell />
+    </View>
+  );
 }

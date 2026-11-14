@@ -80,8 +80,8 @@ export const shellStrings = {
     en: "Fill in Pengkinian Data Induk on SIX, then come back. The app reads SIX again on its own.",
   },
   "status.notStudentHint": {
-    id: "Edunex Plus hanya untuk mahasiswa. Keluar, lalu masuk dengan akun mahasiswamu.",
-    en: "Edunex Plus is for students only. Sign out, then sign in with your student account.",
+    id: "Akun ini bukan akun mahasiswa yang dikenali. Keluar, lalu masuk dengan akun mahasiswamu.",
+    en: "This isn't a recognised student account. Sign out, then sign in with your student account.",
   },
   "status.actionNeededHint": {
     id: "Selesaikan yang diminta di {source}, lalu kembali ke sini. Aplikasi membaca {source} lagi sendiri.",

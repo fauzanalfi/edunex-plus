@@ -127,7 +127,7 @@ or mistyped field the app relies on is a vendor change (see [Errors](#errors)).
 
 | Call | Query sent | Fields used |
 | --- | --- | --- |
-| `/login/me` | none | `id` (user id), `name`, `code` (the NIM) |
+| `/login/me` | none | `id` (user id), `name`, `code` (the NIM, students), `level` (`LECTURER` without `code` → lecturer shell; otherwise a student needs `code`) |
 | `/notifications/{userId}` | none | `data.notifications[]`: `type`, `title`, `objectId`, `date`, `message` |
 | `/course/presences/list` | none | `course_id`, `course_code`, `courses_name`, `class_id`, `class_name`, `semester`, `year` |
 | `/course/tasks` | `filter[course_id][is]={courseId}`, `page[limit]=0`; or, for the open Tasks, `filter[course_id][in]={id},{id},…`, `filter[end_at][gte]={WIB time}`, `page[limit]=0` | `meta.total`; per Task `id`, `taskable_type`, `taskable_id`, `course_id` (the open Tasks' call only), `course_name`, `type`, `tasks_type`, `name`, `description`, `files[{name,file}]`, `start_at`, `end_at`, `created_at`, `updated_at`, `open_status`, `file_required`, `is_lateable`, `domain`, `show_score`, `answers[]`: `id`, `answer`, `files`, `score`, `is_sent`, `sent_at`, `created_at`, `updated_at`, `verified_at`, `comment` |

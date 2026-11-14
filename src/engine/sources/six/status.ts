@@ -52,9 +52,9 @@ export function readNim(html: string): string {
       .map((href) => /(?:\/app\/|[?&]context=)mahasiswa:(\d+)/.exec(href)?.[1])
       .find(Boolean);
   if (!nim) {
-    // A lecturer's SIX links /app/dosen:… pages, none a student's: the app reads only a Student's, and that isn't a change.
+    // A lecturer's SIX links /app/dosen:… pages, none a student's: student SIX pages aren't read for them (not a change).
     if (links($).some((href) => /(?:\/app\/|[?&]context=)dosen:/.test(href)))
-      throw new ActionNeeded("student", "SIX signed in a lecturer account, not a student's");
+      throw new ActionNeeded("lecturer", "SIX signed in a lecturer account; student pages aren't read");
     throw changed("home", "no student pages are linked");
   }
   return nim;

@@ -20,7 +20,7 @@ import type { FeedRead } from "../../report/kept-pages";
 import type { Priority } from "../../sync/scheduler";
 import type { SourceContext } from "../source";
 import type { EdunexClient } from "./client";
-import { fetchCourses } from "./feeds";
+import { fetchCourses, forStudent } from "./feeds";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -158,6 +158,7 @@ export function registerCoursePageFeeds(context: SourceContext, client: EdunexCl
       jitter: every / 10,
       async run(current, notes) {
         const run = noted(notes);
+        if (!(await forStudent(run.context))) return;
         const value: Record<string, T> = {};
         for (const course of await courses(run)) {
           if (!current()) return;
@@ -179,6 +180,7 @@ export function registerCoursePageFeeds(context: SourceContext, client: EdunexCl
     async run(current, read) {
       const run = noted(read);
       const { context, client } = run;
+      if (!(await forStudent(context))) return;
       const nim = context.get("edunex.account")?.nim ?? null;
       const outlines: Record<string, CourseOutline> = {};
       const materials: Record<string, Material[]> = {};

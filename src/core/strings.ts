@@ -19,6 +19,7 @@ import { guideStrings } from "./strings/guide";
 import { highlightStrings } from "./strings/highlights";
 import { homeStrings } from "./strings/home";
 import { itbStrings } from "./strings/itb";
+import { lecturerStrings } from "./strings/lecturer";
 import { licencesStrings } from "./strings/licences";
 import { mobileStrings } from "./strings/mobile";
 import { mobileAcademicStrings } from "./strings/mobile-academic";
@@ -43,6 +44,7 @@ export type { Entry } from "./strings/entry";
 
 export const STRINGS = {
   ...shellStrings,
+  ...lecturerStrings,
   ...tasksStrings,
   ...coursePageStrings,
   ...contentStrings,

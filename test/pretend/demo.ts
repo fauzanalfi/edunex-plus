@@ -28,7 +28,7 @@ export interface DemoOptions {
   sick?: boolean;
   /** EDUNEX_DEMO_DATAINDUK: SIX sends every page of the Student's to its personal-details form first (#278, #279). */
   dataInduk?: boolean;
-  /** EDUNEX_DEMO_LECTURER: a lecturer signed in, not a student: Edunex says level "LECTURER" without a NIM, SIX links only dosen pages (#345). */
+  /** EDUNEX_DEMO_LECTURER: a lecturer signed in: Edunex says level "LECTURER" without a NIM; the lecturer shell opens (Phase A). */
   lecturer?: boolean;
   /** EDUNEX_DEMO_CURRICULUM: SIX marks every curriculum of the Student's program ✗, as a first-year program's (#292). */
   curriculum?: "none";

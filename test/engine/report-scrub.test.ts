@@ -290,7 +290,7 @@ describe("a report about an Edunex answer", () => {
         .replace(/[\u0080-\uffff]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
     // A Student with a middle name, which their file names carry too.
     const name = "Rahmat Sakti Hidayatullah";
-    const known: Partial<{ [N in DatasetName]: DatasetValue<N> }> = { "edunex.account": { name, nim: REAL.nim } };
+    const known: Partial<{ [N in DatasetName]: DatasetValue<N> }> = { "edunex.account": { name, nim: REAL.nim, role: "student" } };
     const storage = ["https://edunexstore.blob.core", "windows.net/edunex/production/task/314159"].join(".");
     const signed = ["?sv=2023-11-03&se=2026-10-30T00%3A00%3A00Z&sr=b&sp=r&sig", "Zm9vYmFyYmF6cXV4"].join("=");
     const teams = ["https://teams.microsoft", "com/l/meetup-join/19%3ameeting_Zm9v%40thread.v2/0"].join(".");

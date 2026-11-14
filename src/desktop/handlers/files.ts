@@ -11,6 +11,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { app, dialog, shell } from "electron";
+import { accountKey } from "../../core/account";
 import type { Event } from "../../core/contract";
 import { planOfflineFiles } from "../../core/course-materials";
 import type { DatasetName, DatasetValue } from "../../core/models";
@@ -79,25 +80,25 @@ const kindOf = (file: string) => path.extname(file).toLowerCase().slice(0, 16);
 /** A file name that ends in ".pdf", whatever the Student typed. */
 export const pdfName = (name: string) => (/\.pdf$/i.test(name) ? name : `${name}.pdf`);
 
-/** Who is signed in to Edunex (their NIM): the files the app keeps are theirs. */
+/** Who is signed in to Edunex (account key): the files the app keeps are theirs. */
 export function edunexNim(engine: Engine): string | null {
   const account = engine.snapshot().datasets.find((d) => d.name === "edunex.account")?.value as DatasetValue<"edunex.account"> | undefined;
-  return account?.nim ?? null;
+  return account ? accountKey(account) : null;
 }
 
 /**
  * Follows the engine's events and empties the file cache and the record of
- * downloads the moment another Student's Edunex account arrives (one who
- * signed in after the last one's session ran out, with no sign-out between),
- * as the engine forgets the last one's data then. `nim`: who was signed in
- * when the app started.
+ * downloads the moment another Edunex account arrives (one who signed in after
+ * the last one's session ran out, with no sign-out between), as the engine
+ * forgets the last one's data then. `nim`: who was signed in when the app started
+ * (an account key, including lecturers).
  */
 export function forgetOtherStudentsFiles(kept: Pick<FileCache | DownloadedFiles, "clear">[], nim: string | null): (event: Event) => Promise<void> {
   let last = nim;
   return async (event) => {
     if (event.type !== "dataset" || event.dataset.name !== "edunex.account") return;
-    // The engine removes the last Student's account before it sets the new one; `last` stays theirs through that.
-    const next = (event.dataset.value as DatasetValue<"edunex.account">).nim;
+    // The engine removes the last account before it sets the new one; `last` stays theirs through that.
+    const next = accountKey(event.dataset.value as DatasetValue<"edunex.account">);
     const other = last !== null && next !== last;
     last = next;
     if (other) await Promise.all(kept.map((files) => files.clear().catch(() => undefined)));

@@ -398,7 +398,12 @@ function Connect({ aim, onNext }: { aim: (element: HTMLElement | null, reach: nu
       {/* Lined up on the logos, so both stay level with the app's mark whatever their lines say. The mark is carried
           from the step before; Edunex and SIX rise in either side of it, then their links. */}
       <div className="flex w-full items-start justify-center">
-        <SourceTile className={ARRIVE_SCENE} style={arriveAt(0, 350, 120)} source="edunex" who={account ? [displayName(account.name), account.nim] : null} />
+        <SourceTile
+          className={ARRIVE_SCENE}
+          style={arriveAt(0, 350, 120)}
+          source="edunex"
+          who={account ? [displayName(account.name), account.role === "lecturer" ? t("lecturer.role") : (account.nim ?? "")] : null}
+        />
         <Link on={edunex} side="left" style={arriveAt(0, 600)} />
         <div className="-mt-1.5">
           <Mark size="medium" markRef={(element) => (mark.current = element)} />

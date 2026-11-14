@@ -2,6 +2,7 @@
 // the network, time, disk and keychain injected. The desktop shell runs it in
 // Electron's main process; tests run it whole against the pretend world.
 import { z } from "zod";
+import { accountKey } from "../core/account";
 import type { Event, Snapshot } from "../core/contract";
 import { REPORT_RELAY_URL } from "../core/links";
 import {
@@ -402,20 +403,27 @@ export function createEngine(deps: EngineDeps): Engine {
     );
   }
 
-  /** Whose data each source holds now (their NIM). */
+  /** Whose data each source holds now (student NIM, or lecturer account key). */
   const students = new Map<SourceId, string>();
   /**
-   * Another Student's data arriving on this computer: what the app did and read for the one before
+   * Another account's data arriving on this computer: what the app did and read for the one before
    * isn't this one's to report (the log, when each feed last read well).
    */
   function followStudent(event: Event): void {
     if (event.type !== "dataset") return;
     const source = event.dataset.name === "edunex.account" ? "edunex" : event.dataset.name === "six.student" ? "six" : null;
-    const nim = (event.dataset.value as { nim?: unknown } | null)?.nim;
-    if (!source || typeof nim !== "string") return;
+    if (!source) return;
+    const value = event.dataset.value as { nim?: unknown; role?: unknown; userId?: unknown; name?: unknown } | null;
+    const key =
+      source === "edunex" && value?.role === "lecturer"
+        ? `l:${typeof value.userId === "number" ? value.userId : String(value?.name ?? "")}`
+        : typeof value?.nim === "string"
+          ? value.nim
+          : null;
+    if (key === null) return;
     const before = students.get(source);
-    students.set(source, nim);
-    if (!before || before === nim) return;
+    students.set(source, key);
+    if (!before || before === key) return;
     log.clear();
     kept.forgetReads(source);
   }
@@ -676,13 +684,10 @@ export function createEngine(deps: EngineDeps): Engine {
       const datasets = Promise.all([store.load(), phone.load()]);
       const alerted = alerts.load(datasets);
       await Promise.all([datasets, alerted, outbox.load(alerted)]);
-      for (const [source, name] of [
-        ["edunex", "edunex.account"],
-        ["six", "six.student"],
-      ] as const) {
-        const nim = store.get(name)?.nim;
-        if (nim) students.set(source, nim);
-      }
+      const edunexAccount = store.get("edunex.account");
+      if (edunexAccount) students.set("edunex", accountKey(edunexAccount));
+      const sixNim = store.get("six.student")?.nim;
+      if (sixNim) students.set("six", sixNim);
       // A notice saved before this version was installed.
       const notice = store.get("app.update");
       if (notice && !isNewerRelease(notice.version, deps.version)) await store.remove("app.update");

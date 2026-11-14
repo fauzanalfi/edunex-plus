@@ -163,7 +163,10 @@ function SettingsBody({
       </Group>
 
       <Group title={t("settings.accounts")} note={t("settings.accounts.note")}>
-        <AccountRow source="edunex" who={account ? [displayName(account.name), account.nim] : null} />
+        <AccountRow
+          source="edunex"
+          who={account ? [displayName(account.name), account.role === "lecturer" ? t("lecturer.role") : (account.nim ?? "")] : null}
+        />
         <AccountRow source="six" who={student ? [displayName(student.name), student.program ?? student.nim] : null} />
         {onShowFirstScan && (
           <Row label={t("settings.firstScan")} hint={t("settings.firstScan.hint")}>
@@ -788,7 +791,9 @@ function AccountRow({ source, who }: { source: SourceId; who: readonly string[] 
                     ? t("settings.account.dataInduk")
                     : status.asks === "student"
                       ? t("settings.account.notStudent")
-                      : t("settings.account.actionNeeded", { source: name }),
+                      : status.asks === "lecturer"
+                        ? t("settings.account.lecturerSix")
+                        : t("settings.account.actionNeeded", { source: name }),
                 tone: "text-warning-fg",
               }
             : status.state === "connecting"
